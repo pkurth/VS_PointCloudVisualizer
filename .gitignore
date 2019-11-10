@@ -1,0 +1,6 @@
+.vs/
+TestApp/Debug/
+*.user
+TestApp/TestApp/Debug/
+VSExtension/bin/
+VSExtension/obj/

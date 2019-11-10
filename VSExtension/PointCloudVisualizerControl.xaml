@@ -1,0 +1,66 @@
+﻿<UserControl x:Class="VSExtension.PointCloudVisualizerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:sharpGL="clr-namespace:SharpGL.WPF;assembly=SharpGL.WPF"
+             xmlns:vsshell="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0"
+             Background="{DynamicResource VsBrush.Window}"
+             Foreground="{DynamicResource VsBrush.WindowText}"
+             mc:Ignorable="d"
+             Name="MyToolWindow" d:DesignHeight="300" d:DesignWidth="300">
+
+    <UserControl.Resources>
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="{DynamicResource VsBrush.Window}" />
+            <Setter Property="Foreground" Value="{DynamicResource VsBrush.WindowText}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource VsBrush.ToolWindowBorder}" />
+            <Setter Property="BorderThickness" Value="0, 1, 1, 1"/>
+            <Setter Property="Padding" Value="5, 2, 5, 2" />
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource VsBrush.Window}" />
+            <Setter Property="Foreground" Value="{DynamicResource VsBrush.WindowText}" />
+            <Setter Property="BorderBrush" Value="DarkGray" />
+        </Style>
+    </UserControl.Resources>
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="2" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ListBox x:Name="listBox" Grid.Column="0" Grid.RowSpan="2" HorizontalContentAlignment="Stretch" >
+
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBox x:Name="textBoxTask"
+                        Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged}"
+                        PreviewGotKeyboardFocus="SelectCurrentItem"
+                        />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+
+        </ListBox>
+
+
+        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Grid.RowSpan="2" />
+
+
+        <DockPanel Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.RowSpan="2" >
+            <sharpGL:OpenGLControl 
+        Name="openGLControl" 
+        DrawFPS="True" RenderContextType="FBO"/>
+        </DockPanel>
+        <!--
+        <Image x:Name="image" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center"  Source="https://upload.wikimedia.org/wikipedia/commons/3/30/Googlelogo.png" Margin="0,10,0,236"/>
+        -->
+    </Grid>
+</UserControl>

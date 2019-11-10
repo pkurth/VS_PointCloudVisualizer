@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="static_point_cloud&lt;*&gt;">
+    <DisplayString>{$T1} size point cloud</DisplayString>
+
+    <Expand>
+      <Item Name="[size]">
+        $T1
+      </Item>
+      <Item Name="[positions]">
+        positions
+      </Item>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>
