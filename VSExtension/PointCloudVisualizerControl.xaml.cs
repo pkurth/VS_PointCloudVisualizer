@@ -5,7 +5,6 @@
     using System.Windows.Controls;
 
     using EnvDTE;
-    using Microsoft.VisualStudio.PlatformUI;
 
     using System;
     using System.Collections.Generic;
@@ -19,6 +18,14 @@
     using GlmNet;
     using System.Windows.Input;
 
+    public class PointCloudMemberData
+    {
+        public int size;
+        public string positionPtr;
+        public string normalPtr;
+        public string uvMemberPtr;
+    }
+
     class ObservedVariable : System.ComponentModel.INotifyPropertyChanged
     {
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
@@ -26,6 +33,8 @@
         {
             PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
         }
+
+        public PointCloudMemberData MemberData { get; set; }
 
         protected string name = string.Empty;
         public string Name
@@ -66,13 +75,16 @@
         Point lastMousePos;
         vec3 cameraPos;
 
+        public static PointCloudVisualizerControl Instance;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="PointCloudVisualizerControl"/> class.
         /// </summary>
         public PointCloudVisualizerControl()
         {
+            Instance = this;
+
             DebugHandler.DebuggerEvents.OnEnterBreakMode += DebuggerEvents_OnEnterBreakMode;
-            VSColorTheme.ThemeChanged += VSColorTheme_ThemeChanged;
 
             Variables = new ObservableCollection<ObservedVariable>();
 
@@ -233,6 +245,34 @@
             }
         }
 
+        public void AddItem(string name, PointCloudMemberData memberData)
+        {
+            bool success = false;
+            if (Variables.Count > 0)
+            {
+                var variable = Variables[Variables.Count - 1];
+                if (variable.Name == null || variable.Name == "")
+                {
+                    variable = new ObservedVariable(name);
+                    variable.MemberData = memberData;
+                    ResetAt(variable, Variables.Count - 1);
+                    SelectItem(Variables.Count - 1);
+                    UpdateItem(Variables.Count - 1);
+                    success = true;
+                }
+            }
+            
+            if (!success)
+            {
+                var variable = new ObservedVariable(name);
+                variable.MemberData = memberData;
+                ResetAt(variable, Variables.Count);
+                SelectItem(Variables.Count - 1);
+            }
+
+            ResetAt(new ObservedVariable(), Variables.Count);
+        }
+
         private void UpdateItem(int index)
         {
             numVertices = 0;
@@ -243,7 +283,16 @@
 
                 if (DebugHandler.Debugger.CurrentMode == dbgDebugMode.dbgBreakMode)
                 {
-                    PointCloud pointCloud = DebugHandler.Load(variable.Name);
+                    PointCloud pointCloud = null;
+
+                    if (variable.MemberData == null)
+                    {
+                        pointCloud = DebugHandler.Load(variable.Name);
+                    }
+                    else
+                    {
+                        pointCloud = DebugHandler.Load(variable.Name, variable.MemberData);
+                    }
 
                     if (pointCloud != null)
                     {
@@ -339,10 +388,6 @@
         private void DebuggerEvents_OnEnterBreakMode(dbgEventReason Reason, ref dbgExecutionAction ExecutionAction)
         {
             UpdateItem(currentlyObservedVariable);
-        }
-
-        private void VSColorTheme_ThemeChanged(ThemeChangedEventArgs e)
-        {
         }
     }
 }

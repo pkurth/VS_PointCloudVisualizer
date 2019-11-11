@@ -7,7 +7,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.Win32;
@@ -15,6 +14,11 @@ using Task = System.Threading.Tasks.Task;
 
 namespace VSExtension
 {
+    [Guid("F3F86C91-3016-42E2-BAA1-DB673D62B473")]
+    public interface SPointCloudVisualizerService
+    {
+    }
+
     /// <summary>
     /// This is the class that implements the package exposed by this assembly.
     /// </summary>
@@ -34,6 +38,7 @@ namespace VSExtension
     /// </remarks>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
+    [ProvideService(typeof(SPointCloudVisualizerService), ServiceName = "PointCloudVisualizerService", IsAsyncQueryable = true)]
     [ProvideToolWindow(typeof(PointCloudVisualizer))]
     [Guid(PointCloudVisualizerPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
@@ -68,16 +73,23 @@ namespace VSExtension
         {
             // When initialized asynchronously, the current thread may be a background thread at this point.
             // Do any initialization that requires the UI thread after switching to the UI thread.
-            await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            //await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             await PointCloudVisualizerCommand.InitializeAsync(this);
 
-            base.Initialize();
+            await base.InitializeAsync(cancellationToken, progress);
             DebugHandler.Initialize(this);
+
+            this.AddService(typeof(SPointCloudVisualizerService), (sc, ct, st) => Task.FromResult<object>(new PointCloudVisualizerService()), true);
         }
 
         public new object GetService(Type serviceType)
         {
             return base.GetService(serviceType);
+        }
+
+        public new System.Threading.Tasks.Task<object> GetServiceAsync(Type serviceType)
+        {
+            return base.GetServiceAsync(serviceType);
         }
 
         public new DialogPage GetDialogPage(Type dialogPageType)

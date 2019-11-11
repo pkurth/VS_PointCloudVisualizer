@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?> 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <UIVisualizer ServiceId="{F3F86C91-3016-42E2-BAA1-DB673D62B473}" Id="1" MenuName="VSExtension"/>
 
   <Type Name="static_point_cloud&lt;*&gt;">
-    <DisplayString>{$T1} size point cloud</DisplayString>
-
+    <UIVisualizer ServiceId="{F3F86C91-3016-42E2-BAA1-DB673D62B473}" Id="1" />
+  </Type>
+  
+  <Type Name="static_point_cloud&lt;*&gt;">
     <Expand>
-      <Item Name="[size]">
-        $T1
-      </Item>
-      <Item Name="[positions]">
-        positions
-      </Item>
+      <Item Name="[size]">$T1</Item>
+      <Item Name="[positions]">positions</Item>
+
     </Expand>
   </Type>
 

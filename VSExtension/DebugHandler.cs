@@ -85,6 +85,74 @@ namespace VSExtension
             return true;
         }
 
+        static PointCloud GetPointCloud(int size, string positionPtr, string normalsPtr)
+        {
+            Debugger debugger = Instance.debugger;
+
+            PointCloud result = new PointCloud(size);
+
+            for (int i = 0; i < size; ++i)
+            {
+                if (positionPtr != null)
+                {
+                    string xName = positionPtr + "[" + (i * 3 + 0) + "]";
+                    string yName = positionPtr + "[" + (i * 3 + 1) + "]";
+                    string zName = positionPtr + "[" + (i * 3 + 2) + "]";
+
+                    float x, y, z;
+                    TryLoadFloat(debugger, xName, out x);
+                    TryLoadFloat(debugger, yName, out y);
+                    TryLoadFloat(debugger, zName, out z);
+
+                    result.vertices[i * 8 + 0] = x;
+                    result.vertices[i * 8 + 1] = y;
+                    result.vertices[i * 8 + 2] = z;
+                }
+                else
+                {
+                    result.vertices[i * 8 + 0] = 0;
+                    result.vertices[i * 8 + 1] = 0;
+                    result.vertices[i * 8 + 2] = 0;
+                }
+
+                result.vertices[i * 8 + 3] = 0;
+                result.vertices[i * 8 + 4] = 0;
+
+                if (normalsPtr != null)
+                {
+                    string xName = normalsPtr + "[" + (i * 3 + 0) + "]";
+                    string yName = normalsPtr + "[" + (i * 3 + 1) + "]";
+                    string zName = normalsPtr + "[" + (i * 3 + 2) + "]";
+
+                    float x, y, z;
+                    TryLoadFloat(debugger, xName, out x);
+                    TryLoadFloat(debugger, yName, out y);
+                    TryLoadFloat(debugger, zName, out z);
+
+                    result.vertices[i * 8 + 5] = x;
+                    result.vertices[i * 8 + 6] = y;
+                    result.vertices[i * 8 + 7] = z;
+                }
+                else
+                {
+                    result.vertices[i * 8 + 5] = 0;
+                    result.vertices[i * 8 + 6] = 0;
+                    result.vertices[i * 8 + 7] = 0;
+                }
+            }
+
+            return result;
+        }
+
+        public static PointCloud Load(string name, PointCloudMemberData memberData)
+        {
+            int size = memberData.size;
+
+            string positionPtr = "((float*)" + memberData.positionPtr + ")";
+
+            return GetPointCloud(size, positionPtr, null);
+        }
+
         public static PointCloud Load(string name)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -110,45 +178,7 @@ namespace VSExtension
             string positionPtr = "((float*)" + expressionName + ".positions)";
             string normalsPtr = "((float*)" + expressionName + ".normals)";
 
-            PointCloud result = new PointCloud(size);
-
-            for (int i = 0; i < size; ++i)
-            {
-                {
-                    string xName = positionPtr + "[" + (i * 3 + 0) + "]";
-                    string yName = positionPtr + "[" + (i * 3 + 1) + "]";
-                    string zName = positionPtr + "[" + (i * 3 + 2) + "]";
-
-                    float x, y, z;
-                    TryLoadFloat(debugger, xName, out x);
-                    TryLoadFloat(debugger, yName, out y); 
-                    TryLoadFloat(debugger, zName, out z);
-
-                    result.vertices[i * 8 + 0] = x;
-                    result.vertices[i * 8 + 1] = y;
-                    result.vertices[i * 8 + 2] = z;
-                }
-
-                result.vertices[i * 8 + 3] = 0;
-                result.vertices[i * 8 + 4] = 0;
-
-                {
-                    string xName = normalsPtr + "[" + (i * 3 + 0) + "]";
-                    string yName = normalsPtr + "[" + (i * 3 + 1) + "]";
-                    string zName = normalsPtr + "[" + (i * 3 + 2) + "]";
-
-                    float x, y, z;
-                    TryLoadFloat(debugger, xName, out x);
-                    TryLoadFloat(debugger, yName, out y);
-                    TryLoadFloat(debugger, zName, out z);
-
-                    result.vertices[i * 8 + 5] = x;
-                    result.vertices[i * 8 + 6] = y;
-                    result.vertices[i * 8 + 7] = z;
-                }
-            }
-
-            return result;
+            return GetPointCloud(size, positionPtr, normalsPtr);
         }
 
         static int ParseInt(string val, bool isHex)
