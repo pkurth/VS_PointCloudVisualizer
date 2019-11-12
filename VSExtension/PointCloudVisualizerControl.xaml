@@ -8,7 +8,8 @@
              Background="{DynamicResource VsBrush.Window}"
              Foreground="{DynamicResource VsBrush.WindowText}"
              mc:Ignorable="d"
-             Name="MyToolWindow" d:DesignHeight="300" d:DesignWidth="300">
+             d:DesignHeight="900" d:DesignWidth="900"
+             Name="MyToolWindow">
 
     <UserControl.Resources>
         <Style TargetType="ListBox">
@@ -55,9 +56,28 @@
 
 
         <DockPanel Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.RowSpan="2" >
+
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="x Axis" Foreground="{DynamicResource VsBrush.WindowText}" />
+                    <ComboBox x:Name="comboBoxXAxis"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" >
+                    <Label Content="y Axis" Foreground="{DynamicResource VsBrush.WindowText}" />
+                    <ComboBox x:Name="comboBoxYAxis"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" >
+                    <Label Content="z Axis" Foreground="{DynamicResource VsBrush.WindowText}" />
+                    <ComboBox x:Name="comboBoxZAxis" HorizontalAlignment="Stretch"/>
+                </StackPanel>
+            </StackPanel>
+
             <sharpGL:OpenGLControl 
-        Name="openGLControl" 
-        DrawFPS="True" RenderContextType="FBO"/>
+                 DockPanel.Dock="Top"
+                Name="openGLControl" 
+                DrawFPS="True" RenderContextType="FBO"/>
         </DockPanel>
         <!--
         <Image x:Name="image" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center"  Source="https://upload.wikimedia.org/wikipedia/commons/3/30/Googlelogo.png" Margin="0,10,0,236"/>

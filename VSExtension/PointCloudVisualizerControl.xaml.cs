@@ -18,12 +18,23 @@
     using GlmNet;
     using System.Windows.Input;
 
-    public class PointCloudMemberData
+    public enum PointCloudPrecisionType
+    {
+        Float,
+        Double,
+        Unknown
+    };
+
+    public class PointCloudVisualizationData
     {
         public int size;
         public string positionPtr;
         public string normalPtr;
         public string uvMemberPtr;
+
+        public PointCloudPrecisionType precision = PointCloudPrecisionType.Float;
+
+        public int dimension;
     }
 
     class ObservedVariable : System.ComponentModel.INotifyPropertyChanged
@@ -34,7 +45,7 @@
             PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
         }
 
-        public PointCloudMemberData MemberData { get; set; }
+        public PointCloudVisualizationData MemberData { get; set; }
 
         protected string name = string.Empty;
         public string Name
@@ -54,6 +65,53 @@
         public ObservedVariable(string name) { Name = name; }
     }
 
+    class DrawingAxis
+    {
+        public vec3 Axis;
+        string axisName;
+
+        public int Id { get; set; }
+
+        public string AxisName
+        {
+            get
+            {
+                return axisName;
+            }
+            set 
+            {
+                switch (value)
+                {
+                    case "Right":
+                        Axis = new vec3(1, 0, 0);
+                        break;
+                    case "Left":
+                        Axis = new vec3(-1, 0, 0);
+                        break;
+                    case "Up":
+                        Axis = new vec3(0, 1, 0);
+                        break;
+                    case "Down":
+                        Axis = new vec3(0, -1, 0);
+                        break;
+                    case "Forward":
+                        Axis = new vec3(0, 0, -1);
+                        break;
+                    case "Backward":
+                        Axis = new vec3(0, 0, 1);
+                        break;
+                }
+                axisName = value;
+            }
+        }
+
+        public DrawingAxis(string axis, int id)
+        {
+            AxisName = axis;
+            Id = id;
+        }
+    }
+
     /// <summary>
     /// Interaction logic for PointCloudVisualizerControl.
     /// </summary>
@@ -61,6 +119,10 @@
     {
         ObservableCollection<ObservedVariable> Variables { get; set; }
         int currentlyObservedVariable = -1;
+
+        ObservableCollection<DrawingAxis> xAxisCollection;
+        ObservableCollection<DrawingAxis> yAxisCollection;
+        ObservableCollection<DrawingAxis> zAxisCollection;
 
         VertexBufferArray vao;
         VertexBuffer vbo;
@@ -71,6 +133,7 @@
         mat4 projectionMatrix;
         mat4 viewMatrix;
         mat4 modelMatrix;
+        mat4 coordinateSystemMatrix;
 
         Point lastMousePos;
         vec3 cameraPos;
@@ -104,6 +167,68 @@
 
             ResetAt(new ObservedVariable(), Variables.Count);
             SelectItem(0);
+
+            {
+                xAxisCollection = new ObservableCollection<DrawingAxis>();
+                xAxisCollection.Add(new DrawingAxis("Right", 1));
+                xAxisCollection.Add(new DrawingAxis("Left", 2));
+                xAxisCollection.Add(new DrawingAxis("Up", 3));
+                xAxisCollection.Add(new DrawingAxis("Down", 4));
+                xAxisCollection.Add(new DrawingAxis("Forward", 5));
+                xAxisCollection.Add(new DrawingAxis("Backward", 6));
+
+                comboBoxXAxis.ItemsSource = xAxisCollection;
+                comboBoxXAxis.DisplayMemberPath = "AxisName";
+                comboBoxXAxis.SelectedValuePath = "Id";
+                comboBoxXAxis.SelectedValue = "1";
+                comboBoxXAxis.SelectionChanged += Axis_SelectionChanged;
+            }
+
+            {
+                yAxisCollection = new ObservableCollection<DrawingAxis>();
+                yAxisCollection.Add(new DrawingAxis("Right", 1));
+                yAxisCollection.Add(new DrawingAxis("Left", 2));
+                yAxisCollection.Add(new DrawingAxis("Up", 3));
+                yAxisCollection.Add(new DrawingAxis("Down", 4));
+                yAxisCollection.Add(new DrawingAxis("Forward", 5));
+                yAxisCollection.Add(new DrawingAxis("Backward", 6));
+
+                comboBoxYAxis.ItemsSource = yAxisCollection;
+                comboBoxYAxis.DisplayMemberPath = "AxisName";
+                comboBoxYAxis.SelectedValuePath = "Id";
+                comboBoxYAxis.SelectedValue = "3";
+                comboBoxYAxis.SelectionChanged += Axis_SelectionChanged;
+            }
+
+            {
+                zAxisCollection = new ObservableCollection<DrawingAxis>();
+                zAxisCollection.Add(new DrawingAxis("Right", 1));
+                zAxisCollection.Add(new DrawingAxis("Left", 2));
+                zAxisCollection.Add(new DrawingAxis("Up", 3));
+                zAxisCollection.Add(new DrawingAxis("Down", 4));
+                zAxisCollection.Add(new DrawingAxis("Forward", 5));
+                zAxisCollection.Add(new DrawingAxis("Backward", 6));
+
+                comboBoxZAxis.ItemsSource = zAxisCollection;
+                comboBoxZAxis.DisplayMemberPath = "AxisName";
+                comboBoxZAxis.SelectedValuePath = "Id";
+                comboBoxZAxis.SelectedValue = "6";
+                comboBoxZAxis.SelectionChanged += Axis_SelectionChanged;
+            }
+
+            coordinateSystemMatrix = new mat4(1);
+            UpdateCoordinateSystemMatrix();
+        }
+
+        private void UpdateCoordinateSystemMatrix()
+        {
+            vec3 x = ((DrawingAxis)comboBoxXAxis.SelectedItem).Axis;
+            vec3 y = ((DrawingAxis)comboBoxYAxis.SelectedItem).Axis;
+            vec3 z = ((DrawingAxis)comboBoxZAxis.SelectedItem).Axis;
+
+            coordinateSystemMatrix[0] = new vec4(x, 0);
+            coordinateSystemMatrix[1] = new vec4(y, 0);
+            coordinateSystemMatrix[2] = new vec4(z, 0);
         }
 
         private void OpenGL_Initialize(object sender, OpenGLEventArgs args)
@@ -137,10 +262,16 @@
                     layout (location = 2) in vec3 in_normal;
 
                     uniform mat4 mvp;
+                    uniform mat4 m;
+
+                    out vec3 normal;
+                    out vec2 uv;
 
                     void main()
                     {
                         gl_Position = mvp * vec4(in_position, 1.0);
+                        normal = (m * vec4(in_normal, 0.0)).xyz;
+                        uv = in_uv;
                     }
                 ";
             string fragmentShaderSource =
@@ -149,9 +280,16 @@
 
                     layout (location = 0) out vec4 out_color;
 
+                    in vec3 normal;
+                    in vec2 uv;
+
                     void main()
                     {
                         out_color = vec4(1, 0, 0, 1);
+                        if (length(normal) > 0.0)
+                        {
+                            out_color = vec4(abs(normal), 1);
+                        }
                     }
                 ";
 
@@ -195,10 +333,12 @@
 
                 //modelMatrix = glm.rotate(modelMatrix, glm.radians(5f), new vec3(0f, 1f, 0f));
 
-                mat4 mvp = projectionMatrix * viewMatrix * modelMatrix;
+                mat4 m = modelMatrix * coordinateSystemMatrix;
+                mat4 mvp = projectionMatrix * viewMatrix * m;
 
                 shader.Bind(gl);
                 shader.SetUniformMatrix4(gl, "mvp", mvp.to_array());
+                shader.SetUniformMatrix4(gl, "m", m.to_array());
 
                 vao.Bind(gl);
                 gl.DrawArrays(OpenGL.GL_POINTS, 0, numVertices);
@@ -245,7 +385,7 @@
             }
         }
 
-        public void AddItem(string name, PointCloudMemberData memberData)
+        public void AddItem(string name, PointCloudVisualizationData memberData)
         {
             bool success = false;
             if (Variables.Count > 0)
@@ -352,6 +492,11 @@
                 return;
 
             UpdateItem(index);
+        }
+
+        private void Axis_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateCoordinateSystemMatrix();
         }
 
         private void ObservedVariable_NameChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)

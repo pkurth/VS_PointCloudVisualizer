@@ -144,7 +144,7 @@ namespace VSExtension
             return result;
         }
 
-        public static PointCloud Load(string name, PointCloudMemberData memberData)
+        public static PointCloud Load(string name, PointCloudVisualizationData memberData)
         {
             int size = memberData.size;
 

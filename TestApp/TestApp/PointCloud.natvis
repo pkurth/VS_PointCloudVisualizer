@@ -7,9 +7,20 @@
   </Type>
   
   <Type Name="static_point_cloud&lt;*&gt;">
+    
     <Expand>
+      
       <Item Name="[size]">$T1</Item>
-      <Item Name="[positions]">positions</Item>
+      
+      <Synthetic Name="[positions]">
+        <DisplayString>{(void*)positions}</DisplayString>
+      </Synthetic>
+      
+      <Synthetic Name="[precision]">
+        <DisplayString>double</DisplayString>
+      </Synthetic>
+      
+      <Item Name="[dimension]">3</Item>
 
     </Expand>
   </Type>
